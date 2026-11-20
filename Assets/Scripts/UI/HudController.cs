@@ -164,7 +164,7 @@ namespace SlotMachine.UI
             {
                 bool freeSpin = _machine.FreeSpinsRemaining > 0;
                 _spinButtonLabel.text = freeSpin ? "FREE SPIN" : "SPIN";
-                _spinButtonLabel.fontSize = freeSpin ? 32 : 48;
+                _spinButtonLabel.fontSize = freeSpin ? 26 : 38;
             }
         }
 
@@ -294,7 +294,7 @@ namespace SlotMachine.UI
 
             bool jackpot = result.Tier == WinTier.Jackpot;
             bool hasWin = result.IsWin;
-            _winBannerText.fontSize = jackpot ? 20 : 25;
+            _winBannerText.fontSize = jackpot ? 18 : 23;
             _winBannerText.color = jackpot ? _jackpotTextColor : hasWin ? _winTextColor : _lossTextColor;
             _winBannerText.text = hasWin
                 ? $"{result.Description}\n+{FormatCredits(result.Payout)} CREDITS"

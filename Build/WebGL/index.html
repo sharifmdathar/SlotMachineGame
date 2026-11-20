@@ -70,8 +70,8 @@
       };
 
       // Unity keeps the WebGL render target matched to the CSS size of the
-      // canvas, so the responsive 16:9 container below also controls render
-      // resolution automatically.
+      // canvas, so the full-viewport container also controls render resolution
+      // automatically while CanvasScaler Expand protects the game layout.
       config.matchWebGLToCanvasSize = true;
 
       var script = document.createElement("script");

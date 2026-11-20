@@ -1,6 +1,5 @@
 /* ResponsiveFit WebGL template
-   Fits a 16:9 Unity canvas inside the browser viewport with no scrollbars.
-   The page background matches the game's dark cabinet/backdrop palette. */
+   Fills the entire browser viewport with no letterbox bars and no scrollbars. */
 
 html,
 body {
@@ -20,20 +19,18 @@ body {
   color: #f7ead0;
 }
 
-/* Exact 16:9 fit: width and height are independently clamped to the viewport. */
+/* Full-viewport canvas: Unity's CanvasScaler Expand handles aspect-ratio safety. */
 #unity-container {
   position: relative;
-  width: min(100vw, calc(100vh * 16 / 9));
-  height: min(100vh, calc(100vw * 9 / 16));
+  width: 100vw;
+  height: 100vh;
   background: #0d081d;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
   overflow: hidden;
 }
 
 @supports (height: 100dvh) {
   #unity-container {
-    width: min(100vw, calc(100dvh * 16 / 9));
-    height: min(100dvh, calc(100vw * 9 / 16));
+    height: 100dvh;
   }
 }
 
@@ -48,21 +45,20 @@ body {
   display: block;
   width: 100%;
   height: 100%;
-  background: #231F20;
+  background: #0d081d;
   outline: none;
 }
 
-/* Keep the 16:9 game frame centered when the optional fullscreen control is used. */
+/* Fullscreen also fills the display; the in-canvas game handles aspect ratios. */
 #unity-fullscreen-container:fullscreen {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 100vw;
+  height: 100vh;
   background: #0d081d;
 }
 
 #unity-fullscreen-container:fullscreen #unity-canvas {
-  width: min(100vw, calc(100vh * 16 / 9));
-  height: min(100vh, calc(100vw * 9 / 16));
+  width: 100%;
+  height: 100%;
 }
 
 /* Loading overlay */

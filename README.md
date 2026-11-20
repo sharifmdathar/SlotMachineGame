@@ -33,7 +33,7 @@ python3 -m http.server 8787
 
 Use a local HTTP server; opening `index.html` through `file://` will not work because the WebGL loader fetches streaming files.
 
-The build uses the project-local **ResponsiveFit** template. The game is always fitted to a 16:9 box inside the browser viewport, so it never produces scrollbars or clips the HUD at 1920×1080 — including on ultrawide, laptop, and portrait windows.
+The build uses the project-local **ResponsiveFit** template. The canvas fills the browser viewport with no letterbox or pillarbox bars and no scrollbars; a 16:9 `EnvelopeParent` background guarantees full coverage while `CanvasScaler.Expand` keeps all HUD, reels, and modals inside the visible area on ultrawide, laptop, and portrait windows.
 
 ### Rebuild WebGL from the command line
 
@@ -112,7 +112,7 @@ Assets/
 ├── Scenes/MainScene.unity             # generated and fully wired
 ├── Sounds/README.md                   # explains the generated-audio approach
 ├── Animations/README.md               # explains the curve/coroutine animation approach
-├── WebGLTemplates/ResponsiveFit/      # project-local 16:9 fit-to-viewport WebGL template
+├── WebGLTemplates/ResponsiveFit/      # project-local full-viewport WebGL template
 └── UI/Raw/Slot Machine/               # supplied raw art, never renamed or modified
 ```
 
@@ -224,7 +224,7 @@ Background
   ConfirmResetModal
 ```
 
-The Canvas uses **Scale With Screen Size**, reference resolution **1920×1080**, and match **0.5**. Corner HUD panels use a **48 px safe-area inset** on the reference canvas, and the SPIN/SPACE stack is lifted clear of the bottom edge. Every generated MonoBehaviour’s serialized fields are assigned through `SerializedObject`; `ValidateSceneReferences()` scans builder-owned components for null object references and reports the count.
+The Canvas uses **Scale With Screen Size**, reference resolution **1920×1080**, and `ScreenMatchMode.Expand`, so the reference canvas grows on non-16:9 screens instead of cropping. Corner HUD panels use a **48 px safe-area inset** on the reference canvas; the cabinet group is scaled to 0.94 and lifted 16 px; reel symbols are inset to 0.88 of their cell height; and the SPIN/SPACE stack is vertically centered with a smaller label. The background is a 16:9 envelope that always covers the viewport. Every generated MonoBehaviour’s serialized fields are assigned through `SerializedObject`; `ValidateSceneReferences()` scans builder-owned components for null object references and reports the count.
 
 `Tools > Slot Game > Validate Project` re-opens the scene and runs the same reference audit. A successful build logs:
 
@@ -236,7 +236,7 @@ The Canvas uses **Scale With Screen Size**, reference resolution **1920×1080**,
 ### WebGL Player Settings
 
 - `runInBackground = true`
-- Default web screen size **1920×1080** (canvas backing resolution; CSS scales the render target to fit the viewport)
+- Default web screen size **1920×1080** (reference resolution; CSS stretches the canvas to the viewport and Unity resizes the render target to match)
 - Custom template **`PROJECT:ResponsiveFit`**
 - WebGL compression **Disabled** (static-server friendly)
 - Exception support **None** (smaller, faster release build)
@@ -248,8 +248,9 @@ The Canvas uses **Scale With Screen Size**, reference resolution **1920×1080**,
 `Assets/WebGLTemplates/ResponsiveFit/` is a project-local Unity WebGL template, so the responsive behavior survives every rebuild:
 
 - `html, body` are full-viewport, `overflow: hidden`, dark `#0d081d`, and use flex centering.
-- `#unity-container` uses `width: min(100vw, calc(100vh * 16 / 9))` and `height: min(100vh, calc(100vw * 9 / 16))`, with a `100dvh` refinement for mobile browser chrome.
+- `#unity-container` uses `width: 100vw` and `height: 100vh` (with a `100dvh` refinement for mobile browser chrome), so no letterbox or pillarbox area exists.
 - `#unity-canvas` fills the container at `width: 100%; height: 100%`; Unity’s `matchWebGLToCanvasSize` keeps the render target in sync.
+- The in-canvas `Background` uses a 16:9 `AspectRatioFitter` in `EnvelopeParent` mode, so the art always covers the viewport even when `CanvasScaler.Expand` makes the canvas wider or taller than 16:9.
 - The footer is removed; a compact loading overlay and a fullscreen button are the only chrome.
 - The builder sets `PlayerSettings.WebGL.template = "PROJECT:ResponsiveFit"` in `ConfigureBuildSettings()`.
 
@@ -267,7 +268,7 @@ The Canvas uses **Scale With Screen Size**, reference resolution **1920×1080**,
   - auto-spin toggles and continues spins;
   - paytable and out-of-credits modals render with the sliced art and close correctly.
 - **WebGL:** build succeeded at **≈48.1 MB**; served with `python3 -m http.server`, the loader booted in a browser and the game rendered.
-- **Responsive fit:** verified at 1280×800, 1600×700, and 700×900 viewports. The canvas stayed 16:9 in every case, `scrollWidth`/`scrollHeight` matched the viewport, and no footer or horizontal/vertical scrollbars appeared.
+- **Responsive fit:** verified at 1402×876, 805×964, and 427×925 viewports. The canvas and container exactly matched the viewport in every case, `scrollWidth`/`scrollHeight` matched `innerWidth`/`innerHeight`, the background covered the full frame, and no footer or scrollbars appeared. The Unity Game view at 1280×720 confirmed that the scaled cabinet, centered reels, 2-line paytable footer, and HUD label spacing render correctly.
 - **Payline:** verified in both the Unity Game view and the WebGL browser preview that the amber center-row band, edge lines, and gold side brackets render without covering symbol art.
 
 ---
@@ -303,4 +304,4 @@ A clean history for this assignment:
 - This is a **demo**, not a gambling product. RNG and balance are client-side; there is no server authority, anti-cheat, or real-money handling.
 - `PlayerPrefs` is local to the browser profile and can be cleared by the user.
 - WebGL audio requires a user gesture before the browser will allow playback.
-- The project targets the supplied 1920×1080 layout; the CanvasScaler handles other aspect ratios, but the cabinet art is composed for 16:9.
+- The project uses a 1920×1080 reference layout. `CanvasScaler.Expand` keeps the fixed-size HUD and cabinet safe at other aspect ratios, while the 16:9 background envelope fills any extra viewport area with art rather than black bars.

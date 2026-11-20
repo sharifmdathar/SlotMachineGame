@@ -69,6 +69,11 @@ namespace SlotMachine.EditorTools
         // Comfortable safe-area inset for corner HUD panels on the 1920x1080 reference canvas.
         private const float HudSafeMargin = 48f;
 
+        // The cabinet and its reels are scaled/lifted as one group so the machine never gets
+        // sliced by the bottom of a non-16:9 viewport.
+        private const float MachineScale = 0.94f;
+        private const float MachineLift = 16f;
+
         private static readonly Color Gold = new Color(1f, 0.79f, 0.28f, 1f);
         private static readonly Color Cream = new Color(1f, 0.96f, 0.87f, 1f);
         private static readonly Color Muted = new Color(0.72f, 0.76f, 0.88f, 1f);
@@ -461,6 +466,7 @@ namespace SlotMachine.EditorTools
             SetObject(serialized, "_cellsRoot", cellsRect);
             SetFloat(serialized, "_cellWidth", cellWidth);
             SetFloat(serialized, "_cellHeight", cellHeight);
+            SetFloat(serialized, "_symbolScale", 0.88f);
             SetInt(serialized, "_cellBuffer", 2);
             SetFloat(serialized, "_baseSpeed", 1700f);
             SetFloat(serialized, "_accelerationDuration", 0.32f);
@@ -533,23 +539,30 @@ namespace SlotMachine.EditorTools
             CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 0.5f;
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
             scaler.referencePixelsPerUnit = 100f;
 
             RectTransform canvasRect = canvasObject.GetComponent<RectTransform>();
 
-            Image background = CreateImage("Background", canvasRect, backgroundSprite, Vector2.zero, Vector2.zero, false);
+            // The background uses a 16:9 envelope so it always covers the whole viewport, even
+            // when Expand gives the canvas extra width or height on non-16:9 displays.
+            Image background = CreateImage("Background", canvasRect, backgroundSprite, Vector2.zero, Vector2.zero, true);
             Stretch(background.rectTransform);
+            AspectRatioFitter backgroundFitter = background.gameObject.AddComponent<AspectRatioFitter>();
+            backgroundFitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+            backgroundFitter.aspectRatio = 16f / 9f;
             background.raycastTarget = false;
 
             RectTransform gameRoot = CreateUIObject("GameRoot", canvasRect);
             Stretch(gameRoot);
 
-            Image backing = CreateImage("ReelWindowBacking", gameRoot, backingSprite, cabinetSize, Vector2.zero, true);
+            RectTransform machineRoot = CreateUIObject("MachineRoot", gameRoot);
+            Stretch(machineRoot);
+
+            Image backing = CreateImage("ReelWindowBacking", machineRoot, backingSprite, cabinetSize, Vector2.zero, true);
             backing.type = Image.Type.Simple;
 
-            RectTransform reelsRoot = CreateUIObject("Reels", gameRoot);
+            RectTransform reelsRoot = CreateUIObject("Reels", machineRoot);
             Stretch(reelsRoot);
             ReelController[] reels = new ReelController[3];
 
@@ -573,14 +586,14 @@ namespace SlotMachine.EditorTools
                 reels[i] = reel;
             }
 
-            Image cabinet = CreateImage("MachineCabinetFrame", gameRoot, cabinetSprite, cabinetSize, Vector2.zero, true);
+            Image cabinet = CreateImage("MachineCabinetFrame", machineRoot, cabinetSprite, cabinetSize, Vector2.zero, true);
             cabinet.raycastTarget = false;
 
             // Side brackets are layered above the cabinet frame but outside the masked reel
             // windows, giving the player an unmistakable center-payline cue.
-            CreatePaylineBrackets(gameRoot, scale, windowCenterY, windowWidth, cellHeight);
+            CreatePaylineBrackets(machineRoot, scale, windowCenterY, windowWidth, cellHeight);
 
-            Image lever = CreateImage("LeverOverlay", gameRoot, leverUpSprite, cabinetSize, Vector2.zero, true);
+            Image lever = CreateImage("LeverOverlay", machineRoot, leverUpSprite, cabinetSize, Vector2.zero, true);
             lever.raycastTarget = false;
 
             RectTransform leverHit = CreateUIObject("LeverHitArea", lever.transform);
@@ -598,6 +611,11 @@ namespace SlotMachine.EditorTools
             Navigation leverNavigation = leverButton.navigation;
             leverNavigation.mode = Navigation.Mode.None;
             leverButton.navigation = leverNavigation;
+
+            // Frame the whole machine cleanly: scale around the canvas center and lift it just
+            // enough to keep the cabinet base clear of the bottom edge on any aspect ratio.
+            machineRoot.localScale = Vector3.one * MachineScale;
+            machineRoot.anchoredPosition = new Vector2(0f, MachineLift);
 
             GameObject audioObject = new GameObject("Audio", typeof(AudioSource), typeof(ProceduralSfxController));
             ProceduralSfxController sfx = audioObject.GetComponent<ProceduralSfxController>();
@@ -781,18 +799,18 @@ namespace SlotMachine.EditorTools
             out Button paytableButton)
         {
             CreateSimplePanel("BalancePanel", hudRoot, new Vector2(320f, 130f), new Vector2(-960f + HudSafeMargin + 160f, 380f), Color.white);
-            CreateText("BalanceCaption", hudRoot, "BALANCE", 18, TextAnchor.MiddleCenter, Gold, new Vector2(260f, 26f), new Vector2(-960f + HudSafeMargin + 160f, 414f), true);
-            balanceText = CreateText("BalanceValue", hudRoot, "1,000", 40, TextAnchor.MiddleCenter, Cream, new Vector2(290f, 60f), new Vector2(-960f + HudSafeMargin + 160f, 366f), true);
+            CreateText("BalanceCaption", hudRoot, "BALANCE", 18, TextAnchor.MiddleCenter, Gold, new Vector2(260f, 26f), new Vector2(-960f + HudSafeMargin + 160f, 398f), true);
+            balanceText = CreateText("BalanceValue", hudRoot, "1,000", 40, TextAnchor.MiddleCenter, Cream, new Vector2(290f, 60f), new Vector2(-960f + HudSafeMargin + 160f, 354f), true);
 
             CreateSimplePanel("BetPanel", hudRoot, new Vector2(320f, 156f), new Vector2(-960f + HudSafeMargin + 160f, -370f), Color.white);
-            CreateText("BetCaption", hudRoot, "BET", 18, TextAnchor.MiddleCenter, Gold, new Vector2(120f, 24f), new Vector2(-960f + HudSafeMargin + 160f, -306f), true);
-            betText = CreateText("BetValue", hudRoot, "10", 34, TextAnchor.MiddleCenter, Cream, new Vector2(150f, 50f), new Vector2(-960f + HudSafeMargin + 160f, -350f), true);
+            CreateText("BetCaption", hudRoot, "BET", 18, TextAnchor.MiddleCenter, Gold, new Vector2(120f, 24f), new Vector2(-960f + HudSafeMargin + 160f, -322f), true);
+            betText = CreateText("BetValue", hudRoot, "10", 34, TextAnchor.MiddleCenter, Cream, new Vector2(150f, 50f), new Vector2(-960f + HudSafeMargin + 160f, -362f), true);
 
             betDecrease = CreateSpriteButton(
                 "BetDecrease",
                 hudRoot,
                 new Vector2(76f, 76f),
-                new Vector2(-960f + HudSafeMargin + 160f - 112f, -386f),
+                new Vector2(-960f + HudSafeMargin + 160f - 112f, -370f),
                 leftArrow["LeftArrow_Normal"],
                 leftArrow["LeftArrow_Hover"],
                 leftArrow["LeftArrow_Pressed"],
@@ -801,7 +819,7 @@ namespace SlotMachine.EditorTools
                 "BetIncrease",
                 hudRoot,
                 new Vector2(76f, 76f),
-                new Vector2(-960f + HudSafeMargin + 160f + 112f, -386f),
+                new Vector2(-960f + HudSafeMargin + 160f + 112f, -370f),
                 rightArrow["RightArrow_Normal"],
                 rightArrow["RightArrow_Hover"],
                 rightArrow["RightArrow_Pressed"],
@@ -816,8 +834,8 @@ namespace SlotMachine.EditorTools
                 new Color(1f, 0.98f, 0.94f, 1f),
                 new Color(0.94f, 0.86f, 0.68f, 1f),
                 new Color(0.58f, 0.55f, 0.58f, 0.65f));
-            spinLabel = CreateText("SpinLabel", spinButton.transform, "SPIN", 48, TextAnchor.MiddleCenter, Color.white, new Vector2(320f, 50f), new Vector2(0f, 18f), true);
-            CreateText("SpinHint", spinButton.transform, "SPACE", 13, TextAnchor.MiddleCenter, new Color(1f, 0.95f, 0.8f, 0.82f), new Vector2(120f, 16f), new Vector2(0f, -18f), true);
+            spinLabel = CreateText("SpinLabel", spinButton.transform, "SPIN", 38, TextAnchor.MiddleCenter, Color.white, new Vector2(320f, 44f), new Vector2(0f, 7f), true);
+            CreateText("SpinHint", spinButton.transform, "SPACE", 12, TextAnchor.MiddleCenter, new Color(1f, 0.95f, 0.8f, 0.82f), new Vector2(120f, 15f), new Vector2(0f, -21f), true);
 
             autoSpinButton = CreatePanelButton(
                 "AutoSpinButton",
@@ -853,7 +871,7 @@ namespace SlotMachine.EditorTools
             freeSpinBadge.SetActive(false);
 
             RectTransform banner = CreateUIObject("WinBanner", hudRoot);
-            SetFixed(banner, new Vector2(0f, -266f), new Vector2(520f, 104f));
+            SetFixed(banner, new Vector2(0f, -260f), new Vector2(520f, 112f));
             winBannerBackground = banner.gameObject.AddComponent<Image>();
             winBannerBackground.sprite = _bannerSprite;
             winBannerBackground.type = Image.Type.Simple;
@@ -863,7 +881,9 @@ namespace SlotMachine.EditorTools
             winBannerGroup.alpha = 0f;
             winBannerGroup.interactable = false;
             winBannerGroup.blocksRaycasts = false;
-            winBannerText = CreateText("WinBannerText", banner, string.Empty, 25, TextAnchor.MiddleCenter, Cream, new Vector2(480f, 84f), Vector2.zero, true);
+            winBannerText = CreateText("WinBannerText", banner, string.Empty, 23, TextAnchor.MiddleCenter, Cream, new Vector2(460f, 72f), Vector2.zero, true);
+            winBannerText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            winBannerText.verticalOverflow = VerticalWrapMode.Truncate;
             banner.gameObject.SetActive(false);
 
             HudController hud = hudRoot.gameObject.AddComponent<HudController>();
@@ -886,9 +906,9 @@ namespace SlotMachine.EditorTools
             panel.raycastTarget = true;
 
             CreateText("PaytableTitle", panel.transform, "PAYTABLE", 42, TextAnchor.MiddleCenter, Gold, new Vector2(500f, 60f), new Vector2(0f, 210f), true);
-            CreateText("HeaderSymbol", panel.transform, "SYMBOL", 17, TextAnchor.MiddleCenter, Muted, new Vector2(220f, 28f), new Vector2(-370f, 142f), true);
-            CreateText("HeaderThree", panel.transform, "3 MATCH", 17, TextAnchor.MiddleCenter, Muted, new Vector2(180f, 28f), new Vector2(-40f, 142f), true);
-            CreateText("HeaderTwo", panel.transform, "2 MATCH", 17, TextAnchor.MiddleCenter, Muted, new Vector2(180f, 28f), new Vector2(250f, 142f), true);
+            CreateText("HeaderSymbol", panel.transform, "SYMBOL", 17, TextAnchor.MiddleCenter, Muted, new Vector2(220f, 28f), new Vector2(-370f, 150f), true);
+            CreateText("HeaderThree", panel.transform, "3 MATCH", 17, TextAnchor.MiddleCenter, Muted, new Vector2(180f, 28f), new Vector2(-40f, 150f), true);
+            CreateText("HeaderTwo", panel.transform, "2 MATCH", 17, TextAnchor.MiddleCenter, Muted, new Vector2(180f, 28f), new Vector2(250f, 150f), true);
 
             Button closeButton = CreateSpriteButton(
                 "PaytableClose",
@@ -904,12 +924,12 @@ namespace SlotMachine.EditorTools
             Text[] names = new Text[symbols.Length];
             Text[] threeValues = new Text[symbols.Length];
             Text[] twoValues = new Text[symbols.Length];
-            float[] rowY = { 92f, 18f, -56f, -130f };
+            float[] rowY = { 100f, 28f, -44f, -116f };
 
             for (int i = 0; i < symbols.Length; i++)
             {
                 float y = rowY[Mathf.Min(i, rowY.Length - 1)];
-                icons[i] = CreateImage($"SymbolIcon_{i}", panel.transform, symbols[i].Sprite, new Vector2(62f, 62f), new Vector2(-370f, y), true);
+                icons[i] = CreateImage($"SymbolIcon_{i}", panel.transform, symbols[i].Sprite, new Vector2(52f, 52f), new Vector2(-370f, y), true);
                 icons[i].raycastTarget = false;
                 names[i] = CreateText($"SymbolName_{i}", panel.transform, symbols[i].DisplayName.ToUpperInvariant(), 25, TextAnchor.MiddleLeft, Cream, new Vector2(220f, 36f), new Vector2(-230f, y), true);
                 threeValues[i] = CreateText($"SymbolThree_{i}", panel.transform, string.Empty, 26, TextAnchor.MiddleCenter, Gold, new Vector2(180f, 36f), new Vector2(-40f, y), true);
@@ -920,7 +940,7 @@ namespace SlotMachine.EditorTools
                 separator.raycastTarget = false;
             }
 
-            Text rules = CreateText("Rules", panel.transform, string.Empty, 16, TextAnchor.UpperCenter, Muted, new Vector2(920f, 76f), new Vector2(0f, -210f), false);
+            Text rules = CreateText("Rules", panel.transform, string.Empty, 16, TextAnchor.UpperCenter, Muted, new Vector2(920f, 48f), new Vector2(0f, -198f), false);
             rules.horizontalOverflow = HorizontalWrapMode.Wrap;
             rules.verticalOverflow = VerticalWrapMode.Truncate;
             rules.lineSpacing = 1f;

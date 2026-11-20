@@ -28,6 +28,7 @@ namespace SlotMachine.Reels
         [SerializeField] private RectTransform _cellsRoot;
         [SerializeField, Min(16f)] private float _cellWidth = 160f;
         [SerializeField, Min(16f)] private float _cellHeight = 103f;
+        [SerializeField, Range(0.5f, 1f)] private float _symbolScale = 0.88f;
         [SerializeField, Min(1)] private int _cellBuffer = 2;
 
         [Header("Symbols")]
@@ -310,7 +311,7 @@ namespace SlotMachine.Reels
                 rect.anchorMin = new Vector2(0.5f, 0.5f);
                 rect.anchorMax = new Vector2(0.5f, 0.5f);
                 rect.pivot = new Vector2(0.5f, 0.5f);
-                rect.sizeDelta = new Vector2(_cellWidth, _cellHeight);
+                rect.sizeDelta = new Vector2(_cellWidth, _cellHeight * _symbolScale);
                 rect.anchoredPosition = Vector2.zero;
 
                 Image image = cell.GetComponent<Image>();
@@ -345,6 +346,7 @@ namespace SlotMachine.Reels
 
                 int k = i - _cellBuffer;
                 RectTransform rect = cell.rectTransform;
+                rect.sizeDelta = new Vector2(_cellWidth, _cellHeight * _symbolScale);
                 rect.anchoredPosition = new Vector2(0f, (k - fraction) * _cellHeight);
 
                 int symbolIndex = PositiveMod(baseIndex + k, _symbols.Length);

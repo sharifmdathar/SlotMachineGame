@@ -110,16 +110,14 @@ namespace SlotMachine.UI
             }
 
             SymbolData jackpotSymbol = FindJackpotSymbol();
-            string jackpotName = jackpotSymbol != null ? jackpotSymbol.DisplayName.ToUpperInvariant() : "SEVEN";
+            string jackpotName = jackpotSymbol != null ? jackpotSymbol.DisplayName : "Seven";
             string jackpotMultiplier = jackpotSymbol != null
                 ? FormatMultiplier(jackpotSymbol.ThreeOfAKindMultiplier)
                 : "50x";
 
             _rulesText.text =
-                $"JACKPOT: TRIPLE {jackpotName} PAYS {jackpotMultiplier} BET + {PayoutEvaluator.JackpotFreeSpins} FREE SPINS.\n" +
-                "ONLY THE CENTER PAYLINE IS EVALUATED. ANY 2 MATCHING SYMBOLS PAY THE MINOR MULTIPLIER.\n" +
-                "FREE SPINS USE THE TRIGGERING BET AND PLAY AUTOMATICALLY.\n" +
-                "RNG: SYSTEM.SECURITY.CRYPTOGRAPHY CSPRNG · WEIGHTED SELECTION · DEMO CREDITS ONLY";
+                $"Triple {jackpotName} = {jackpotMultiplier} + {PayoutEvaluator.JackpotFreeSpins} Free Spins · Any 2 matching symbols on the center line pay the minor bonus.\n" +
+                "Powered by CSPRNG weighted outcome selection (demo credits only).";
         }
 
         private SymbolData FindJackpotSymbol()
