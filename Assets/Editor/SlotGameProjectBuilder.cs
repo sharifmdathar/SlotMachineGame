@@ -37,6 +37,10 @@ namespace SlotMachine.EditorTools
         private const string ScenePath = "Assets/Scenes/MainScene.unity";
         private const string SymbolCellPrefabPath = "Assets/Prefabs/SymbolCell.prefab";
         private const string ReelStripPrefabPath = "Assets/Prefabs/ReelStrip.prefab";
+        private const string GeneratedFolder = "Assets/UI/Generated";
+        private const string CabinetGlowTexturePath = "Assets/UI/Generated/PurpleRadialGlow.asset";
+        private const string PlinthFadeTexturePath = "Assets/UI/Generated/StageBase.asset";
+        private const int GlowTextureSize = 256;
 
         private const string BackgroundFile = "bg_gradient.png";
         private const string CabinetFile = "slot-machine4.png";
@@ -183,6 +187,7 @@ namespace SlotMachine.EditorTools
             EnsureFolder("Assets/Prefabs");
             EnsureFolder("Assets/Scenes");
             EnsureFolder("Assets/UI");
+            EnsureFolder(GeneratedFolder);
             EnsureFolder("Assets/Sounds");
             EnsureFolder("Assets/Animations");
 
@@ -559,6 +564,51 @@ namespace SlotMachine.EditorTools
             RectTransform machineRoot = CreateUIObject("MachineRoot", gameRoot);
             Stretch(machineRoot);
 
+            // A soft indigo radial glow sits lowest inside the machine group so the cabinet and
+            // lever blend into the halftone backdrop with depth. The cabinet art is cropped flat at
+            // its bottom edge (slot-machine4 is opaque through its last pixel row), so a feathered
+            // stage plinth and a drop shadow ground that edge instead of letting it terminate over
+            // the background. All of these are siblings ordered before the cabinet, so they render
+            // behind it.
+            Texture2D softRadial = GetOrCreateCabinetGlowTexture();
+            RawImage glow = CreateRawImage(
+                "CabinetGlow",
+                machineRoot,
+                softRadial,
+                new Vector2(cabinetSize.x * 1.45f, cabinetSize.y * 1.45f),
+                Vector2.zero);
+            glow.raycastTarget = false;
+
+            // Ground the machine on its real footprint. The cabinet's opaque content spans source
+            // x 137..751 (615 px, lever pedestal included), not the full 816 px sprite width, so a
+            // plinth sized to the sprite would float far wider than the machine.
+            float cabinetBottomY = -cabinetSize.y * 0.5f;
+            const float footprintLeft = 137f;
+            const float footprintRight = 751f;
+            float footprintWidth = (footprintRight - footprintLeft) * scale;
+            float footprintCenterX = (((footprintLeft + footprintRight) * 0.5f) - SourceCenterX) * scale;
+
+            RawImage shadow = CreateRawImage(
+                "MachineShadow",
+                machineRoot,
+                softRadial,
+                new Vector2(footprintWidth * 1.25f, footprintWidth * 0.28f),
+                new Vector2(footprintCenterX, cabinetBottomY - 46f));
+            shadow.color = new Color(0.02f, 0.01f, 0.06f, 0.45f);
+            shadow.raycastTarget = false;
+
+            // One soft-edged stage base rather than a hard-edged box: the texture feathers on all
+            // four sides, so the plinth dissolves into the backdrop on every axis and the cabinet's
+            // cropped bottom edge lands on a lit ledge with a faint metallic lip.
+            const float plinthHeight = 118f;
+            RawImage plinth = CreateRawImage(
+                "MachinePlinth",
+                machineRoot,
+                GetOrCreatePlinthFadeTexture(),
+                new Vector2(footprintWidth * 1.08f, plinthHeight),
+                new Vector2(footprintCenterX, cabinetBottomY + 8f - (plinthHeight * 0.5f)));
+            plinth.raycastTarget = false;
+
             Image backing = CreateImage("ReelWindowBacking", machineRoot, backingSprite, cabinetSize, Vector2.zero, true);
             backing.type = Image.Type.Simple;
 
@@ -798,13 +848,18 @@ namespace SlotMachine.EditorTools
             out Text autoSpinLabel,
             out Button paytableButton)
         {
+            // Balance stack is vertically centered on the panel: label (26) + value (60) span 86
+            // units, so the centers sit at +30 and -13 relative to the panel's vertical midpoint.
             CreateSimplePanel("BalancePanel", hudRoot, new Vector2(320f, 130f), new Vector2(-960f + HudSafeMargin + 160f, 380f), Color.white);
-            CreateText("BalanceCaption", hudRoot, "BALANCE", 18, TextAnchor.MiddleCenter, Gold, new Vector2(260f, 26f), new Vector2(-960f + HudSafeMargin + 160f, 398f), true);
-            balanceText = CreateText("BalanceValue", hudRoot, "1,000", 40, TextAnchor.MiddleCenter, Cream, new Vector2(290f, 60f), new Vector2(-960f + HudSafeMargin + 160f, 354f), true);
+            CreateText("BalanceCaption", hudRoot, "BALANCE", 18, TextAnchor.MiddleCenter, Gold, new Vector2(260f, 26f), new Vector2(-960f + HudSafeMargin + 160f, 380f + 30f), true);
+            balanceText = CreateText("BalanceValue", hudRoot, "1,000", 40, TextAnchor.MiddleCenter, Cream, new Vector2(290f, 60f), new Vector2(-960f + HudSafeMargin + 160f, 380f - 13f), true);
 
+            // Bet stack is centered on the panel too, so the value aligns with the arrow buttons on
+            // the panel centerline: label (24) + value (50) span 74 units, so the centers sit at
+            // +26.5 and -13.5 relative to the panel midpoint.
             CreateSimplePanel("BetPanel", hudRoot, new Vector2(320f, 156f), new Vector2(-960f + HudSafeMargin + 160f, -370f), Color.white);
-            CreateText("BetCaption", hudRoot, "BET", 18, TextAnchor.MiddleCenter, Gold, new Vector2(120f, 24f), new Vector2(-960f + HudSafeMargin + 160f, -322f), true);
-            betText = CreateText("BetValue", hudRoot, "10", 34, TextAnchor.MiddleCenter, Cream, new Vector2(150f, 50f), new Vector2(-960f + HudSafeMargin + 160f, -362f), true);
+            CreateText("BetCaption", hudRoot, "BET", 18, TextAnchor.MiddleCenter, Gold, new Vector2(120f, 24f), new Vector2(-960f + HudSafeMargin + 160f, -370f + 26.5f), true);
+            betText = CreateText("BetValue", hudRoot, "10", 34, TextAnchor.MiddleCenter, Cream, new Vector2(150f, 50f), new Vector2(-960f + HudSafeMargin + 160f, -370f - 13.5f), true);
 
             betDecrease = CreateSpriteButton(
                 "BetDecrease",
@@ -1222,6 +1277,119 @@ namespace SlotMachine.EditorTools
             }
 
             return _cachedFont;
+        }
+
+        private static Texture2D GetOrCreatePlinthFadeTexture()
+        {
+            // Regenerated from code on every build, so retuning the stage base never leaves a stale
+            // baked asset behind.
+            AssetDatabase.DeleteAsset(PlinthFadeTexturePath);
+
+            const int width = 128;
+            const int height = 96;
+            Texture2D stage = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            stage.filterMode = FilterMode.Bilinear;
+            stage.wrapMode = TextureWrapMode.Clamp;
+            stage.name = "StageBase";
+
+            Color bodyBottom = new Color(0.085f, 0.055f, 0.22f);
+            Color bodyTop = new Color(0.235f, 0.17f, 0.50f);
+            Color lipGold = new Color(0.93f, 0.74f, 0.34f);
+
+            for (int y = 0; y < height; y++)
+            {
+                // v = 0 at the bottom row, 1 at the top row.
+                float v = y / (height - 1f);
+                float verticalFade = SmoothStep01(v / 0.62f);
+                float bodyAlpha = 0.95f * verticalFade;
+                Color row = Color.Lerp(bodyBottom, bodyTop, SmoothStep01(v / 0.75f));
+
+                // The gold lip is baked 0.88..1.0 up the texture, and the plinth is tucked 8 px
+                // behind the cabinet, so the lip surfaces as a continuous soft-edged metallic line
+                // just below the cabinet's cropped bottom edge instead of peeking past its ends.
+                bool isLip = v > 0.88f;
+                if (isLip)
+                {
+                    row = lipGold;
+                    bodyAlpha = 0.5f * SmoothStep01((v - 0.88f) / 0.04f);
+                }
+
+                for (int x = 0; x < width; x++)
+                {
+                    float u = x / (width - 1f);
+                    float sideFade = SmoothStep01(u / 0.09f) * SmoothStep01((1f - u) / 0.09f);
+                    stage.SetPixel(x, y, new Color(row.r, row.g, row.b, bodyAlpha * sideFade));
+                }
+            }
+
+            stage.Apply(false, false);
+            AssetDatabase.CreateAsset(stage, PlinthFadeTexturePath);
+            return stage;
+        }
+
+        private static float SmoothStep01(float value)
+        {
+            float t = Mathf.Clamp01(value);
+            return t * t * (3f - (2f * t));
+        }
+
+        private static Texture2D GetOrCreateCabinetGlowTexture()
+        {
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(CabinetGlowTexturePath);
+            if (texture != null)
+            {
+                return texture;
+            }
+
+            texture = CreateSoftRadialGlowTexture(GlowTextureSize);
+            AssetDatabase.CreateAsset(texture, CabinetGlowTexturePath);
+            return texture;
+        }
+
+        private static Texture2D CreateSoftRadialGlowTexture(int size)
+        {
+            Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            texture.filterMode = FilterMode.Bilinear;
+            texture.wrapMode = TextureWrapMode.Clamp;
+
+            Color glowColor = new Color(0.36f, 0.22f, 0.85f);
+            float half = (size - 1f) * 0.5f;
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = (x - half) / half;
+                    float dy = (y - half) / half;
+                    float distance = Mathf.Sqrt((dx * dx) + (dy * dy));
+                    float falloff = Mathf.Clamp01(1f - distance);
+
+                    // Smoothstep falloff: tangent-flat at the center and exactly alpha 0 at the edges,
+                    // so the glow feathers into the background with no visible rim.
+                    float alpha = falloff * falloff * (3f - (2f * falloff));
+                    texture.SetPixel(x, y, new Color(glowColor.r, glowColor.g, glowColor.b, alpha));
+                }
+            }
+
+            texture.Apply(false, false);
+            return texture;
+        }
+
+        private static RawImage CreateRawImage(
+            string name,
+            Transform parent,
+            Texture2D texture,
+            Vector2 size,
+            Vector2 position)
+        {
+            RectTransform rect = CreateUIObject(name, parent);
+            SetFixed(rect, position, size);
+
+            RawImage rawImage = rect.gameObject.AddComponent<RawImage>();
+            rawImage.texture = texture;
+            rawImage.color = Color.white;
+            rawImage.raycastTarget = false;
+            return rawImage;
         }
 
         private static void Stretch(RectTransform rect)

@@ -209,20 +209,30 @@ The scene is built entirely through the Unity API — **no hand-written `.unity`
 
 ```
 Background
-  ReelWindowBacking
-  Reels
-    ReelViewport_1 (RectMask2D)
-      PaylineBand (behind symbols)
-      ReelStrip → SymbolCells…
-    ReelViewport_2
-    ReelViewport_3
-  MachineCabinetFrame
-  PaylineBrackets (gold side markers over the cabinet frame)
-  LeverOverlay → LeverHitArea (clickable)
+  MachineRoot
+    CabinetGlow        (generated soft-alpha radial glow, lowest layer)
+    MachinePlinth      (dark-indigo pedestal with a baked gold lip)
+    ReelWindowBacking
+    Reels
+      ReelViewport_1 (RectMask2D)
+        PaylineBand (behind symbols)
+        ReelStrip → SymbolCells…
+      ReelViewport_2
+      ReelViewport_3
+    MachineCabinetFrame
+    PaylineBrackets (gold side markers over the cabinet frame)
+    LeverOverlay → LeverHitArea (clickable)
   HUD
   PaytableModal
   ConfirmResetModal
 ```
+
+The machine fades into the halftone backdrop instead of ending on a hard horizontal cut:
+
+- **`CabinetGlow`** is a `Texture2D` generated procedurally at build time (256×256 RGBA, written to `Assets/UI/Generated/PurpleRadialGlow.asset`) and rendered through a `RawImage` at 1.45× the cabinet size. Its alpha uses a smoothstep falloff (`a = f²(3−2f)`, `f = 1 − r`), which is tangent-flat at the center and **exactly 0 at the texture edge**, so there is no visible rim where the glow meets the background.
+- **`MachinePlinth`** is a code-generated `StageBase.asset` (128×96) with an indigo body, a lit ledge, and a gold lip baked into the top 12% of the texture. The texture is feathered on all four sides and the plinth is tucked 8 px behind the cabinet's bottom edge, so the lip surfaces as one continuous soft line under the machine rather than peeking past the cabinet ends.
+
+The plinth and glow are children of `MachineRoot`, so they inherit its 0.94 scale and 16 px lift with the cabinet and reels.
 
 The Canvas uses **Scale With Screen Size**, reference resolution **1920×1080**, and `ScreenMatchMode.Expand`, so the reference canvas grows on non-16:9 screens instead of cropping. Corner HUD panels use a **48 px safe-area inset** on the reference canvas; the cabinet group is scaled to 0.94 and lifted 16 px; reel symbols are inset to 0.88 of their cell height; and the SPIN/SPACE stack is vertically centered with a smaller label. The background is a 16:9 envelope that always covers the viewport. Every generated MonoBehaviour’s serialized fields are assigned through `SerializedObject`; `ValidateSceneReferences()` scans builder-owned components for null object references and reports the count.
 

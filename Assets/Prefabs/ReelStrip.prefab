@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &2949307450387444270
+--- !u!1 &2770491889252963236
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,7 +8,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 3398917051791482241}
+  - component: {fileID: 2872257255095493648}
   m_Layer: 0
   m_Name: Cells
   m_TagString: Untagged
@@ -16,26 +16,26 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!224 &3398917051791482241
+--- !u!224 &2872257255095493648
 RectTransform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2949307450387444270}
+  m_GameObject: {fileID: 2770491889252963236}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 8428554014401159833}
+  m_Father: {fileID: 476709548031356445}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!1 &6052960638370619590
+--- !u!1 &4199694524676633014
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -43,8 +43,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 8428554014401159833}
-  - component: {fileID: 7618119751244113132}
+  - component: {fileID: 476709548031356445}
+  - component: {fileID: 2287004042697858319}
   m_Layer: 0
   m_Name: ReelStrip
   m_TagString: Untagged
@@ -52,19 +52,19 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!224 &8428554014401159833
+--- !u!224 &476709548031356445
 RectTransform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6052960638370619590}
+  m_GameObject: {fileID: 4199694524676633014}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 3398917051791482241}
+  - {fileID: 2872257255095493648}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -72,20 +72,20 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 158.88461, y: 308.9423}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &7618119751244113132
+--- !u!114 &2287004042697858319
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6052960638370619590}
+  m_GameObject: {fileID: 4199694524676633014}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9323a8fe41369965eabc9bfee8e2c9ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SlotMachine.Reels.ReelController
-  _cellPrefab: {fileID: 2755430867188662822, guid: 19eb99b5cf80cef6c8552f3c12fb757c, type: 3}
-  _cellsRoot: {fileID: 3398917051791482241}
+  _cellPrefab: {fileID: 1286830220627683557, guid: 19eb99b5cf80cef6c8552f3c12fb757c, type: 3}
+  _cellsRoot: {fileID: 2872257255095493648}
   _cellWidth: 158.88461
   _cellHeight: 102.98077
   _symbolScale: 0.88
