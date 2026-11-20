@@ -6,8 +6,8 @@
   },
   "outcome": "success",
   "exitCode": 0,
-  "startedAt": "2026-11-20T21:52:14.518Z",
-  "endedAt": "2026-11-20T21:52:46.419Z",
+  "startedAt": "2026-11-20T22:07:29.442Z",
+  "endedAt": "2026-11-20T22:08:12.998Z",
   "editor": {
     "version": "6000.6.10f1",
     "changeset": "40e81493c67d",
@@ -17,11 +17,11 @@
     "target": "WebGL",
     "executeMethod": "SlotMachine.EditorTools.SlotGameProjectBuilder.BuildWebGLFromCommandLine",
     "outputPath": "Build/WebGL",
-    "logFile": "Logs/webgl5.log"
+    "logFile": "Logs/webgl_arrows.log"
   },
   "source": {
     "vcs": "git",
-    "revision": "594e278acf8bcf58d40d15ea3c25da210723d14c",
+    "revision": "b60efdad9741a05cf938f0cbd7c91b0e65459c9b",
     "dirty": true
   },
   "packages": {

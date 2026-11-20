@@ -861,11 +861,14 @@ namespace SlotMachine.EditorTools
             CreateText("BetCaption", hudRoot, "BET", 18, TextAnchor.MiddleCenter, Gold, new Vector2(120f, 24f), new Vector2(-960f + HudSafeMargin + 160f, -370f + 26.5f), true);
             betText = CreateText("BetValue", hudRoot, "10", 34, TextAnchor.MiddleCenter, Cream, new Vector2(150f, 50f), new Vector2(-960f + HudSafeMargin + 160f, -370f - 13.5f), true);
 
+            // Pull the arrows 12 px inward from their old ±112 px positions so the visible
+            // arrow tips keep roughly 16 px of clean padding from the BET panel borders while
+            // still leaving the centered value room to breathe.
             betDecrease = CreateSpriteButton(
                 "BetDecrease",
                 hudRoot,
                 new Vector2(76f, 76f),
-                new Vector2(-960f + HudSafeMargin + 160f - 112f, -370f),
+                new Vector2(-960f + HudSafeMargin + 160f - 100f, -370f),
                 leftArrow["LeftArrow_Normal"],
                 leftArrow["LeftArrow_Hover"],
                 leftArrow["LeftArrow_Pressed"],
@@ -874,7 +877,7 @@ namespace SlotMachine.EditorTools
                 "BetIncrease",
                 hudRoot,
                 new Vector2(76f, 76f),
-                new Vector2(-960f + HudSafeMargin + 160f + 112f, -370f),
+                new Vector2(-960f + HudSafeMargin + 160f + 100f, -370f),
                 rightArrow["RightArrow_Normal"],
                 rightArrow["RightArrow_Hover"],
                 rightArrow["RightArrow_Pressed"],
