@@ -73,6 +73,13 @@ namespace SlotMachine.EditorTools
         // Comfortable safe-area inset for corner HUD panels on the 1920x1080 reference canvas.
         private const float HudSafeMargin = 48f;
 
+        // Top-right session card. The top inset keeps the card below the 40 px HTML fullscreen
+        // button (14 px from the viewport top) even when CanvasScaler shrinks the HUD.
+        private const float HistoryPanelWidth = 330f;
+        private const float HistoryPanelHeight = 260f;
+        private const float HistoryTopInset = 164f;
+        private const int HistoryRowCount = 5;
+
         // The cabinet and its reels are scaled/lifted as one group so the machine never gets
         // sliced by the bottom of a non-16:9 viewport.
         private const float MachineScale = 0.94f;
@@ -699,7 +706,8 @@ namespace SlotMachine.EditorTools
                 out Button betIncrease,
                 out Button autoSpinButton,
                 out Text autoSpinLabel,
-                out Button paytableButton);
+                out Button paytableButton,
+                out SpinHistoryCard historyCard);
 
             RectTransform paytableRoot = CreateUIObject("PaytableModal", canvasRect);
             Stretch(paytableRoot);
@@ -740,6 +748,7 @@ namespace SlotMachine.EditorTools
             SetObject(hudSerialized, "_autoSpinButton", autoSpinButton);
             SetObject(hudSerialized, "_autoSpinLabel", autoSpinLabel);
             SetObject(hudSerialized, "_paytableButton", paytableButton);
+            SetObject(hudSerialized, "_historyCard", historyCard);
             SetObject(hudSerialized, "_winBannerGroup", winBannerGroup);
             SetObject(hudSerialized, "_winBannerBackground", winBannerBackground);
             SetObject(hudSerialized, "_winBannerText", winBannerText);
@@ -846,7 +855,8 @@ namespace SlotMachine.EditorTools
             out Button betIncrease,
             out Button autoSpinButton,
             out Text autoSpinLabel,
-            out Button paytableButton)
+            out Button paytableButton,
+            out SpinHistoryCard historyCard)
         {
             // Balance stack is vertically centered on the panel: label (26) + value (60) span 86
             // units, so the centers sit at +30 and -13 relative to the panel's vertical midpoint.
@@ -883,6 +893,8 @@ namespace SlotMachine.EditorTools
                 rightArrow["RightArrow_Pressed"],
                 rightArrow["RightArrow_Disabled"]);
 
+            historyCard = BuildSpinHistoryCard(hudRoot);
+
             spinButton = CreatePanelButton(
                 "SpinButton",
                 hudRoot,
@@ -918,7 +930,9 @@ namespace SlotMachine.EditorTools
             CreateText("PaytableLabel", paytableButton.transform, "PAYTABLE", 22, TextAnchor.MiddleCenter, Color.white, new Vector2(220f, 40f), Vector2.zero, true);
 
             RectTransform badge = CreateUIObject("FreeSpinBadge", hudRoot);
-            SetFixed(badge, new Vector2(960f - HudSafeMargin - 125f, 390f), new Vector2(250f, 96f));
+            // The history card owns the top-right corner; the free-spin badge sits below it
+            // and above AUTO/PAYTABLE so both remain legible during a free-spin session.
+            SetFixed(badge, new Vector2(960f - HudSafeMargin - 125f, 55f), new Vector2(250f, 96f));
             Image badgeImage = badge.gameObject.AddComponent<Image>();
             badgeImage.sprite = _panelSprite;
             badgeImage.type = Image.Type.Simple;
@@ -947,6 +961,135 @@ namespace SlotMachine.EditorTools
             HudController hud = hudRoot.gameObject.AddComponent<HudController>();
             _ = hud;
             return hud;
+        }
+
+        private static SpinHistoryCard BuildSpinHistoryCard(RectTransform hudRoot)
+        {
+            Image panel = CreateSimplePanel(
+                "SpinHistoryPanel",
+                hudRoot,
+                new Vector2(HistoryPanelWidth, HistoryPanelHeight),
+                Vector2.zero,
+                Color.white);
+            RectTransform panelRect = panel.rectTransform;
+            panelRect.anchorMin = Vector2.one;
+            panelRect.anchorMax = Vector2.one;
+            panelRect.pivot = Vector2.one;
+
+            // Anchor to the true top-right of the canvas instead of a center-relative position so
+            // the card stays in the corner on tall and narrow viewports.
+            panelRect.anchoredPosition = new Vector2(-HudSafeMargin, -HistoryTopInset);
+
+            // Keep every header/row inside the popup art's baked shadow and rounded border.
+            // offsetMin = (left, bottom); offsetMax = (-right, -top).
+            RectTransform content = CreateUIObject("HistoryContent", panel.transform);
+            content.anchorMin = Vector2.zero;
+            content.anchorMax = Vector2.one;
+            content.pivot = new Vector2(0.5f, 0.5f);
+            content.offsetMin = new Vector2(22f, 18f);
+            content.offsetMax = new Vector2(-22f, -18f);
+
+            CreateText(
+                "HistoryHeader",
+                content,
+                "RECENT SPINS",
+                18,
+                TextAnchor.MiddleLeft,
+                Gold,
+                new Vector2(150f, 24f),
+                new Vector2(-68f, 89f),
+                true);
+            Text netText = CreateText(
+                "HistoryNet",
+                content,
+                "NET: +0",
+                18,
+                TextAnchor.MiddleRight,
+                Color.white,
+                new Vector2(100f, 24f),
+                new Vector2(93f, 89f),
+                true);
+
+            Image divider = CreateImage(
+                "HistoryDivider",
+                content,
+                null,
+                new Vector2(286f, 1f),
+                new Vector2(0f, 69f),
+                false);
+            divider.color = new Color(1f, 1f, 1f, 0.14f);
+            divider.raycastTarget = false;
+
+            Text emptyState = CreateText(
+                "HistoryEmpty",
+                content,
+                "No spins yet",
+                16,
+                TextAnchor.MiddleCenter,
+                Muted,
+                new Vector2(250f, 30f),
+                new Vector2(0f, -16f),
+                false);
+
+            float[] rowY = { 44f, 14f, -16f, -46f, -76f };
+            GameObject[] rowRoots = new GameObject[HistoryRowCount];
+            Image[] rowIcons = new Image[HistoryRowCount * 3];
+            Text[] rowBetTexts = new Text[HistoryRowCount];
+            Text[] rowNetTexts = new Text[HistoryRowCount];
+
+            for (int row = 0; row < HistoryRowCount; row++)
+            {
+                RectTransform rowRect = CreateUIObject($"HistoryRow_{row + 1}", content);
+                SetFixed(rowRect, new Vector2(0f, rowY[row]), new Vector2(286f, 28f));
+                rowRoots[row] = rowRect.gameObject;
+
+                for (int symbol = 0; symbol < 3; symbol++)
+                {
+                    Image icon = CreateImage(
+                        $"HistorySymbol_{row + 1}_{symbol + 1}",
+                        rowRect,
+                        null,
+                        new Vector2(24f, 24f),
+                        new Vector2(-131f + (symbol * 28f), 0f),
+                        true);
+                    icon.raycastTarget = false;
+                    rowIcons[(row * 3) + symbol] = icon;
+                }
+
+                rowBetTexts[row] = CreateText(
+                    $"HistoryBet_{row + 1}",
+                    rowRect,
+                    "B:10",
+                    16,
+                    TextAnchor.MiddleLeft,
+                    new Color(0.84f, 0.87f, 0.96f, 0.9f),
+                    new Vector2(82f, 24f),
+                    new Vector2(-14f, 0f),
+                    true);
+                rowNetTexts[row] = CreateText(
+                    $"HistoryNet_{row + 1}",
+                    rowRect,
+                    "0",
+                    18,
+                    TextAnchor.MiddleRight,
+                    Muted,
+                    new Vector2(72f, 24f),
+                    new Vector2(107f, 0f),
+                    true);
+
+                rowRect.gameObject.SetActive(false);
+            }
+
+            SpinHistoryCard card = panel.gameObject.AddComponent<SpinHistoryCard>();
+            SerializedObject serialized = new SerializedObject(card);
+            SetObject(serialized, "_netText", netText);
+            SetObject(serialized, "_emptyState", emptyState.gameObject);
+            SetObjectArray(serialized, "_rowRoots", rowRoots.Cast<UnityEngine.Object>().ToArray());
+            SetObjectArray(serialized, "_rowSymbolIcons", rowIcons.Cast<UnityEngine.Object>().ToArray());
+            SetObjectArray(serialized, "_rowBetTexts", rowBetTexts.Cast<UnityEngine.Object>().ToArray());
+            SetObjectArray(serialized, "_rowNetTexts", rowNetTexts.Cast<UnityEngine.Object>().ToArray());
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return card;
         }
 
         private static PaytableModal BuildPaytableModal(
@@ -1022,19 +1165,19 @@ namespace SlotMachine.EditorTools
             dim.color = new Color(0.02f, 0.01f, 0.05f, 0.82f);
             dim.raycastTarget = true;
 
-            Image panel = CreateSlicedPanel("ConfirmPanel", root, new Vector2(760f, 520f), Vector2.zero, Color.white);
+            Image panel = CreateSlicedPanel("ConfirmPanel", root, new Vector2(740f, 520f), Vector2.zero, Color.white);
             panel.raycastTarget = true;
 
             Text title = CreateText("ConfirmTitle", panel.transform, "OUT OF CREDITS", 34, TextAnchor.MiddleCenter, Gold, new Vector2(520f, 56f), new Vector2(0f, 125f), true);
-            Text body = CreateText("ConfirmBody", panel.transform, string.Empty, 22, TextAnchor.MiddleCenter, Cream, new Vector2(620f, 80f), new Vector2(0f, 40f), false);
+            Text body = CreateText("ConfirmBody", panel.transform, string.Empty, 22, TextAnchor.MiddleCenter, Cream, new Vector2(520f, 80f), new Vector2(0f, 40f), false);
             body.horizontalOverflow = HorizontalWrapMode.Wrap;
             body.verticalOverflow = VerticalWrapMode.Truncate;
 
             Button yesButton = CreateSpriteButton(
                 "YesButton",
                 panel.transform,
-                new Vector2(280f, 107f),
-                new Vector2(-160f, -95f),
+                new Vector2(216f, 100f),
+                new Vector2(-142f, -72f),
                 yesNo["Yes_Normal"],
                 yesNo["Yes_Hover"],
                 yesNo["Yes_Pressed"],
@@ -1043,8 +1186,8 @@ namespace SlotMachine.EditorTools
             Button noButton = CreateSpriteButton(
                 "NoButton",
                 panel.transform,
-                new Vector2(280f, 107f),
-                new Vector2(160f, -95f),
+                new Vector2(216f, 100f),
+                new Vector2(142f, -72f),
                 yesNo["No_Normal"],
                 yesNo["No_Hover"],
                 yesNo["No_Pressed"],
@@ -1563,6 +1706,7 @@ namespace SlotMachine.EditorTools
                     && !(behaviour is HudController)
                     && !(behaviour is PaytableModal)
                     && !(behaviour is ConfirmResetModal)
+                    && !(behaviour is SpinHistoryCard)
                     && !(behaviour is ProceduralSfxController))
                 {
                     continue;

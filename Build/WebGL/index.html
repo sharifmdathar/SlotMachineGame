@@ -44,96 +44,80 @@
     </div>
 
     <script>
-      let canvas = document.querySelector("#unity-canvas");
-      let fullscreenContainer = document.querySelector(
-        "#unity-fullscreen-container",
-      );
+            let canvas = document.querySelector("#unity-canvas");
+            let fullscreenContainer = document.querySelector("#unity-fullscreen-container");
 
-      // Shows a temporary message banner/ribbon for a few seconds, or a permanent
-      // error message on top of the canvas if type == 'error'.
-      function unityShowBanner(msg, type) {
-        var warningBanner = document.querySelector("#unity-warning");
-        function updateBannerVisibility() {
-          warningBanner.style.display = warningBanner.children.length
-            ? "block"
-            : "none";
-        }
-        var div = document.createElement("div");
-        div.innerHTML = msg;
-        warningBanner.appendChild(div);
-        if (type == "error")
-          div.style =
-            "background: #b42318; color: #fff; padding: 10px; border-radius: 6px;";
-        else {
-          if (type == "warning")
-            div.style =
-              "background: #f5c542; color: #171022; padding: 10px; border-radius: 6px;";
-          setTimeout(function () {
-            warningBanner.removeChild(div);
-            updateBannerVisibility();
-          }, 5000);
-        }
-        updateBannerVisibility();
-      }
-
-      var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/WebGL.loader.js";
-      var config = {
-        arguments: [],
-        dataUrl: buildUrl + "/WebGL.data",
-        frameworkUrl: buildUrl + "/WebGL.framework.js",
-        codeUrl: buildUrl + "/WebGL.wasm",
-        streamingAssetsUrl: "StreamingAssets",
-        fullscreenElementID: "unity-fullscreen-container",
-        companyName: "DefaultCompany",
-        productName: "SlotMachineGame",
-        productVersion: "1.0",
-        showBanner: unityShowBanner,
-      };
-
-      // Unity keeps the WebGL render target matched to the CSS size of the
-      // canvas, so the full-viewport container also controls render resolution
-      // automatically while CanvasScaler Expand protects the game layout.
-      config.matchWebGLToCanvasSize = true;
-
-      var script = document.createElement("script");
-      script.src = loaderUrl;
-      script.onload = () => {
-        const loadingContainer = document.querySelector(
-          "#unity-loading-container",
-        );
-        const progressBarFull = document.querySelector(
-          "#unity-progress-bar-full",
-        );
-        const fullscreenButton = document.querySelector(
-          "#unity-fullscreen-button",
-        );
-
-        createUnityInstance(canvas, config, (progress) => {
-          if (progress < 1) {
-            loadingContainer.style.display = "block";
-            progressBarFull.style.width = 100 * progress + "%";
-          } else {
-            loadingContainer.style.display = "none";
-          }
-        })
-          .then((unityInstance) => {
-            fullscreenButton.onclick = () => {
-              unityInstance.SetFullscreen(1);
-            };
-            fullscreenButton.onkeydown = (event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                unityInstance.SetFullscreen(1);
+            // Shows a temporary message banner/ribbon for a few seconds, or a permanent
+            // error message on top of the canvas if type == 'error'.
+            function unityShowBanner(msg, type) {
+              var warningBanner = document.querySelector("#unity-warning");
+              function updateBannerVisibility() {
+                warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
               }
-            };
-          })
-          .catch((message) => {
-            alert(message);
-          });
-      };
+              var div = document.createElement('div');
+              div.innerHTML = msg;
+              warningBanner.appendChild(div);
+              if (type == 'error') div.style = 'background: #b42318; color: #fff; padding: 10px; border-radius: 6px;';
+              else {
+                if (type == 'warning') div.style = 'background: #f5c542; color: #171022; padding: 10px; border-radius: 6px;';
+                setTimeout(function() {
+                  warningBanner.removeChild(div);
+                  updateBannerVisibility();
+                }, 5000);
+              }
+              updateBannerVisibility();
+            }
 
-      document.body.appendChild(script);
+            var buildUrl = "Build";
+            var loaderUrl = buildUrl + "/WebGL.loader.js";
+            var config = {
+              arguments: [],
+              dataUrl: buildUrl + "/WebGL.data",
+              frameworkUrl: buildUrl + "/WebGL.framework.js",
+              codeUrl: buildUrl + "/WebGL.wasm",
+              streamingAssetsUrl: "StreamingAssets",
+              fullscreenElementID: "unity-fullscreen-container",
+              companyName: "DefaultCompany",
+              productName: "SlotMachineGame",
+              productVersion: "1.0",
+              showBanner: unityShowBanner,
+            };
+
+            // Unity keeps the WebGL render target matched to the CSS size of the
+            // canvas, so the full-viewport container also controls render resolution
+            // automatically while CanvasScaler Expand protects the game layout.
+            config.matchWebGLToCanvasSize = true;
+
+            var script = document.createElement("script");
+            script.src = loaderUrl;
+            script.onload = () => {
+              const loadingContainer = document.querySelector("#unity-loading-container");
+              const progressBarFull = document.querySelector("#unity-progress-bar-full");
+              const fullscreenButton = document.querySelector("#unity-fullscreen-button");
+
+              createUnityInstance(canvas, config, (progress) => {
+                if (progress < 1) {
+                  loadingContainer.style.display = "block";
+                  progressBarFull.style.width = (100 * progress) + "%";
+                } else {
+                  loadingContainer.style.display = "none";
+                }
+              }).then((unityInstance) => {
+                fullscreenButton.onclick = () => {
+                  unityInstance.SetFullscreen(1);
+                };
+                fullscreenButton.onkeydown = (event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    unityInstance.SetFullscreen(1);
+                  }
+                };
+              }).catch((message) => {
+                alert(message);
+              });
+            };
+
+            document.body.appendChild(script);
     </script>
   </body>
 </html>

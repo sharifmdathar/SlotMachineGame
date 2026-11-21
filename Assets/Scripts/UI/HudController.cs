@@ -36,6 +36,9 @@ namespace SlotMachine.UI
         [SerializeField] private Text _autoSpinLabel;
         [SerializeField] private Button _paytableButton;
 
+        [Header("Spin History")]
+        [SerializeField] private SpinHistoryCard _historyCard;
+
         [Header("Banners")]
         [SerializeField] private CanvasGroup _winBannerGroup;
         [SerializeField] private Image _winBannerBackground;
@@ -73,6 +76,7 @@ namespace SlotMachine.UI
             UpdateFreeSpins(_machine.FreeSpinsRemaining);
             UpdateAutoSpinLabel(_machine.AutoSpinEnabled);
             HideWinBannerImmediate();
+            RefreshHistory();
 
             _spinButton.onClick.AddListener(OnSpinClicked);
             _betDecreaseButton.onClick.AddListener(OnDecreaseBet);
@@ -87,6 +91,7 @@ namespace SlotMachine.UI
             _machine.OnFreeSpinsChanged += HandleFreeSpinsChanged;
             _machine.OnAutoSpinChanged += HandleAutoSpinChanged;
             _machine.OnInsufficientFunds += HandleInsufficientFunds;
+            _machine.OnHistoryChanged += RefreshHistory;
 
             if (_paytableModal != null)
             {
@@ -113,6 +118,7 @@ namespace SlotMachine.UI
                 _machine.OnFreeSpinsChanged -= HandleFreeSpinsChanged;
                 _machine.OnAutoSpinChanged -= HandleAutoSpinChanged;
                 _machine.OnInsufficientFunds -= HandleInsufficientFunds;
+                _machine.OnHistoryChanged -= RefreshHistory;
             }
 
             if (_paytableModal != null)
@@ -276,8 +282,17 @@ namespace SlotMachine.UI
             RefreshInteractables();
         }
 
+        private void RefreshHistory()
+        {
+            if (_historyCard != null && _machine != null)
+            {
+                _historyCard.Refresh(_machine.RecentHistory, _machine.SessionNet);
+            }
+        }
+
         private void HandleSpinCompleted(PayoutResult result)
         {
+            RefreshHistory();
             if (_bannerRoutine != null)
             {
                 StopCoroutine(_bannerRoutine);
@@ -395,7 +410,7 @@ namespace SlotMachine.UI
 
             if (_machine.OpenModal())
             {
-                _confirmResetModal.Show(_machine.StartingBalance);
+                _confirmResetModal.Show(_machine.StartingBalance, _machine.Balance, _machine.Bet, _machine.MinBet);
             }
         }
 

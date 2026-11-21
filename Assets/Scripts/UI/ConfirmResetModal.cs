@@ -55,17 +55,32 @@ namespace SlotMachine.UI
             }
         }
 
-        /// <summary>Shows the dialog with the refill amount included in the body copy.</summary>
-        public void Show(int startingBalance)
+        /// <summary>
+        /// Shows the dialog with copy appropriate to the shortfall. A balance below the minimum bet
+        /// is truly out of credits; a balance that covers the minimum but not the selected bet is a
+        /// bet-size problem and should offer lowering the bet instead of implying the wallet is empty.
+        /// </summary>
+        public void Show(int startingBalance, int currentBalance, int currentBet, int minimumBet)
         {
+            bool trulyOutOfCredits = currentBalance < minimumBet;
+            bool betExceedsBalance = !trulyOutOfCredits && currentBalance < currentBet;
+            if (!trulyOutOfCredits && !betExceedsBalance)
+            {
+                // Defensive fallback for an unexpected caller: treat it as a refill prompt.
+                trulyOutOfCredits = true;
+            }
+
             if (_titleText != null)
             {
-                _titleText.text = "OUT OF CREDITS";
+                _titleText.text = trulyOutOfCredits ? "OUT OF CREDITS" : "BET EXCEEDS BALANCE";
             }
 
             if (_bodyText != null)
             {
-                _bodyText.text = $"REFILL YOUR DEMO BALANCE TO {startingBalance.ToString("N0", CultureInfo.InvariantCulture)} CREDITS?";
+                string refill = startingBalance.ToString("N0", CultureInfo.InvariantCulture);
+                _bodyText.text = trulyOutOfCredits
+                    ? $"REFILL YOUR DEMO BALANCE TO {refill} CREDITS?"
+                    : $"YOU HAVE {currentBalance.ToString("N0", CultureInfo.InvariantCulture)} CREDITS. LOWER YOUR BET TO PLAY, OR REFILL TO {refill}?";
             }
 
             gameObject.SetActive(true);

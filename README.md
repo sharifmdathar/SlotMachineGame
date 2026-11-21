@@ -60,7 +60,7 @@ _(WebGL compression is disabled so `/Build/WebGL` runs out-of-the-box on any sta
 | **PAYTABLE**                        | Opens the payout table modal (reads directly from `SymbolData` assets).                 |
 | **YES / NO (Out of Credits)**       | Refills demo credits to the starting balance or dismisses the prompt.                   |
 
-Session balance and bet selection persist locally via `PlayerPrefs` (`SlotMachine.Balance`, `SlotMachine.BetIndex`).
+Session balance and bet selection persist locally via `PlayerPrefs` (`SlotMachine.Balance`, `SlotMachine.BetIndex`). Completed spins are also kept in an in-memory five-entry session history: the top-right **RECENT SPINS** card lists the newest first, shows true per-turn net (`payout - committed bet`, or payout only on a free spin), and accumulates a session P&L total. Refilling the demo balance clears the history and session net.
 
 ---
 
@@ -94,6 +94,7 @@ Assets/
 │   │   ├── CryptoRngProvider.cs       # CSPRNG + weighted selection
 │   │   ├── SymbolData.cs              # ScriptableObject symbol config
 │   │   ├── SpinOutcome.cs             # Immutable spin snapshot (symbols + committed bet)
+│   │   ├── SpinHistoryEntry.cs        # Immutable per-turn session history record
 │   │   ├── PayoutEvaluator.cs         # Primary, two-match bonus, and jackpot evaluation
 │   │   └── GameState.cs               # Idle / Spinning / Stopping / Evaluating / ModalOpen
 │   ├── Reels/
@@ -101,6 +102,7 @@ Assets/
 │   │   └── SlotMachineController.cs   # State machine, lever trigger, events & PlayerPrefs
 │   ├── UI/
 │   │   ├── HudController.cs           # Smooth balance count-up, controls, win banner & modals
+│   │   ├── SpinHistoryCard.cs         # Top-right RECENT SPINS / session P&L renderer
 │   │   ├── PaytableModal.cs
 │   │   └── ConfirmResetModal.cs
 │   └── Audio/

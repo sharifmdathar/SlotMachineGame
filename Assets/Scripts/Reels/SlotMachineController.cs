@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using SlotMachine.Audio;
 using SlotMachine.Core;
 using UnityEngine;
@@ -25,6 +26,7 @@ namespace SlotMachine.Reels
         private const string BalancePrefKey = "SlotMachine.Balance";
         private const string BetIndexPrefKey = "SlotMachine.BetIndex";
         private const float TickSfxCooldown = 0.055f;
+        private const int HistoryCapacity = 5;
 
         [Header("Wiring")]
         [SerializeField] private ReelController[] _reels;
@@ -48,12 +50,15 @@ namespace SlotMachine.Reels
 
         private readonly CryptoRngProvider _rng = new CryptoRngProvider();
         private readonly PayoutEvaluator _payoutEvaluator = new PayoutEvaluator();
+        private readonly List<SpinHistoryEntry> _recentHistory = new List<SpinHistoryEntry>();
 
         private GameState _state = GameState.Idle;
         private int _balance;
         private int _betIndex;
         private int _currentBet;
         private int _freeSpinsRemaining;
+        private int _sessionNet;
+        private int _turnNumber;
         private bool _autoSpinEnabled;
         private bool _currentSpinIsFree;
         private bool _isSpinning;
@@ -92,15 +97,25 @@ namespace SlotMachine.Reels
         /// <summary>Raised for every explicit state transition.</summary>
         public event Action<GameState> OnStateChanged;
 
+        /// <summary>Raised after a completed spin is appended to the session history.</summary>
+        public event Action OnHistoryChanged;
+
         public GameState State => _state;
         public int Balance => _balance;
         public int Bet => _betOptions[_betIndex];
+        public int MinBet => _betOptions[0];
         public int StartingBalance => _startingBalance;
         public int FreeSpinsRemaining => _freeSpinsRemaining;
         public bool AutoSpinEnabled => _autoSpinEnabled;
         public bool CanDecreaseBet => _betIndex > 0;
         public bool CanIncreaseBet => _betIndex < _betOptions.Length - 1;
         public bool CanSpin => _state == GameState.Idle && (_freeSpinsRemaining > 0 || _balance >= Bet);
+
+        /// <summary>Newest-first immutable snapshot of the latest completed spins.</summary>
+        public IReadOnlyList<SpinHistoryEntry> RecentHistory => _recentHistory;
+
+        /// <summary>Cumulative profit/loss for the current session, including free spins.</summary>
+        public int SessionNet => _sessionNet;
 
         private void Awake()
         {
@@ -261,10 +276,14 @@ namespace SlotMachine.Reels
         {
             _balance = _startingBalance;
             _freeSpinsRemaining = 0;
+            _recentHistory.Clear();
+            _sessionNet = 0;
+            _turnNumber = 0;
             SaveProgress();
 
             OnBalanceChanged?.Invoke(_balance);
             OnFreeSpinsChanged?.Invoke(_freeSpinsRemaining);
+            OnHistoryChanged?.Invoke();
         }
 
         private IEnumerator RunSpin()
@@ -356,8 +375,33 @@ namespace SlotMachine.Reels
             }
 
             SetState(GameState.Idle);
+            RecordHistory(outcomeSymbols, result);
             OnSpinCompleted?.Invoke(result);
             HandlePostSpin();
+        }
+
+        private void RecordHistory(IReadOnlyList<SymbolData> symbols, PayoutResult result)
+        {
+            int netDelta = _currentSpinIsFree ? result.Payout : result.Payout - result.Bet;
+            _turnNumber++;
+
+            SpinHistoryEntry entry = new SpinHistoryEntry(
+                _turnNumber,
+                symbols,
+                result.Bet,
+                result.Payout,
+                netDelta,
+                _currentSpinIsFree,
+                result.Tier);
+
+            _recentHistory.Insert(0, entry);
+            if (_recentHistory.Count > HistoryCapacity)
+            {
+                _recentHistory.RemoveAt(_recentHistory.Count - 1);
+            }
+
+            _sessionNet += netDelta;
+            OnHistoryChanged?.Invoke();
         }
 
         private void HandlePostSpin()
