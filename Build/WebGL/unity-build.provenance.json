@@ -6,8 +6,8 @@
   },
   "outcome": "success",
   "exitCode": 0,
-  "startedAt": "2026-11-21T00:11:04.859Z",
-  "endedAt": "2026-11-21T00:11:55.062Z",
+  "startedAt": "2026-11-21T01:07:43.479Z",
+  "endedAt": "2026-11-21T01:15:06.443Z",
   "editor": {
     "version": "6000.6.10f1",
     "changeset": "40e81493c67d",
@@ -17,12 +17,12 @@
     "target": "WebGL",
     "executeMethod": "SlotMachine.EditorTools.SlotGameProjectBuilder.BuildWebGLFromCommandLine",
     "outputPath": "Build/WebGL",
-    "logFile": "Logs/webgl_padding.log"
+    "logFile": "Logs/webgl.log"
   },
   "source": {
     "vcs": "git",
-    "revision": "571d23bb1ec73661217c5c84487dfde8b5fc9520",
-    "dirty": true
+    "revision": "2071f6bf0eae3eda12316b3964cc1d252e4fd6af",
+    "dirty": false
   },
   "packages": {
     "source": "packages-lock.json",
