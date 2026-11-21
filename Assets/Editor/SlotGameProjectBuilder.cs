@@ -75,8 +75,8 @@ namespace SlotMachine.EditorTools
 
         // Top-right session card. The top inset keeps the card below the 40 px HTML fullscreen
         // button (14 px from the viewport top) even when CanvasScaler shrinks the HUD.
-        private const float HistoryPanelWidth = 330f;
-        private const float HistoryPanelHeight = 260f;
+        private const float HistoryPanelWidth = 346f;
+        private const float HistoryPanelHeight = 275f;
         private const float HistoryTopInset = 164f;
         private const int HistoryRowCount = 5;
 
@@ -986,8 +986,8 @@ namespace SlotMachine.EditorTools
             content.anchorMin = Vector2.zero;
             content.anchorMax = Vector2.one;
             content.pivot = new Vector2(0.5f, 0.5f);
-            content.offsetMin = new Vector2(22f, 18f);
-            content.offsetMax = new Vector2(-22f, -18f);
+            content.offsetMin = new Vector2(34f, 20f);
+            content.offsetMax = new Vector2(-34f, -24f);
 
             CreateText(
                 "HistoryHeader",
@@ -996,8 +996,8 @@ namespace SlotMachine.EditorTools
                 18,
                 TextAnchor.MiddleLeft,
                 Gold,
-                new Vector2(150f, 24f),
-                new Vector2(-68f, 89f),
+                new Vector2(138f, 24f),
+                new Vector2(-70f, 89f),
                 true);
             Text netText = CreateText(
                 "HistoryNet",
@@ -1007,14 +1007,14 @@ namespace SlotMachine.EditorTools
                 TextAnchor.MiddleRight,
                 Color.white,
                 new Vector2(100f, 24f),
-                new Vector2(93f, 89f),
+                new Vector2(89f, 89f),
                 true);
 
             Image divider = CreateImage(
                 "HistoryDivider",
                 content,
                 null,
-                new Vector2(286f, 1f),
+                new Vector2(278f, 1f),
                 new Vector2(0f, 69f),
                 false);
             divider.color = new Color(1f, 1f, 1f, 0.14f);
@@ -1027,7 +1027,7 @@ namespace SlotMachine.EditorTools
                 16,
                 TextAnchor.MiddleCenter,
                 Muted,
-                new Vector2(250f, 30f),
+                new Vector2(238f, 30f),
                 new Vector2(0f, -16f),
                 false);
 
@@ -1040,7 +1040,7 @@ namespace SlotMachine.EditorTools
             for (int row = 0; row < HistoryRowCount; row++)
             {
                 RectTransform rowRect = CreateUIObject($"HistoryRow_{row + 1}", content);
-                SetFixed(rowRect, new Vector2(0f, rowY[row]), new Vector2(286f, 28f));
+                SetFixed(rowRect, new Vector2(0f, rowY[row]), new Vector2(278f, 28f));
                 rowRoots[row] = rowRect.gameObject;
 
                 for (int symbol = 0; symbol < 3; symbol++)
@@ -1050,7 +1050,7 @@ namespace SlotMachine.EditorTools
                         rowRect,
                         null,
                         new Vector2(24f, 24f),
-                        new Vector2(-131f + (symbol * 28f), 0f),
+                        new Vector2(-127f + (symbol * 28f), 0f),
                         true);
                     icon.raycastTarget = false;
                     rowIcons[(row * 3) + symbol] = icon;
@@ -1063,8 +1063,8 @@ namespace SlotMachine.EditorTools
                     16,
                     TextAnchor.MiddleLeft,
                     new Color(0.84f, 0.87f, 0.96f, 0.9f),
-                    new Vector2(82f, 24f),
-                    new Vector2(-14f, 0f),
+                    new Vector2(80f, 24f),
+                    new Vector2(-12f, 0f),
                     true);
                 rowNetTexts[row] = CreateText(
                     $"HistoryNet_{row + 1}",
@@ -1074,7 +1074,7 @@ namespace SlotMachine.EditorTools
                     TextAnchor.MiddleRight,
                     Muted,
                     new Vector2(72f, 24f),
-                    new Vector2(107f, 0f),
+                    new Vector2(103f, 0f),
                     true);
 
                 rowRect.gameObject.SetActive(false);
